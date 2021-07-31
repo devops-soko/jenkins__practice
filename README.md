@@ -145,7 +145,7 @@ pipeline{
 - Function : define one or more additional steps after the completion of pipelien or stage
 - Location : after stages in pipeline block or after steps in stage block 
 - Conditions
-	- always{} : 파이프라인 또는 stages의 작업결과와 상관없이 post 의 작업 실행
+	- always{} : Run the steps in post regardless of the Pipeline or stage’s status
 	- failure{} : Only run the steps in post if pipeline or stage's run status is 'failed'
 	- success{} : Only run the steps in post if pipeline or stage's run status is 'success'
 	- unstable{} : Only run the steps in post if pipeline or stage's run status is 'unstabe'(test or code issue)
