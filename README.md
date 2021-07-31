@@ -18,11 +18,11 @@ Engineer -> Code -> Build -> Test -> Deployment -> User
 ### 1) What is Jenkins
 Jenkins is an open-source automation tool for CI/CD purposes
 
-### 2) Jenkins 특징 
+### 2) Features of Jenkins 
 - Jenkins is written in Java 
 - Jenkins has a lot of plugins (they help us to implement varius functions)
 
-### 3) install Jenkins
+### 3) Istall Jenkins
 - Jenkins installation files
   - LTS(Long Term Support) Release : Version released every 12 weeks
   - Weekly Release : Version released every week
@@ -50,89 +50,75 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
 
 ## 3. Jenkins Syntax (Reference : https://www.jenkins.io/doc/book/pipeline/syntax/)
 
-### 1) Sections
-#### Section 1 : pipeline
-1. 위치 : 모든 파이프라인은 pipeline 블록으로 시작되어야함
-    
+### 1) pipeline 
+- Form : pipeline { }
+- Location : The Top level block 
+- Feature : it consists of Sections, Directives, Steps, or assignment statements  
 
-#### Section 2 : agent
+### 2) Sections
+#### Section 1 : agent      
+- Location :  	Agent section must be defined at the top-level inside the pipeline block -> refer to ex1
+		or it can be defined at stage-level(optional)  ->refer to ex2
+                
+
+- parameter (There are more parameters. If you want to get info about them then please refer to https://www.jenkins.io/doc/book/pipeline/syntax/#agent) 
+	- any : use any available agent to execute the pipeline or stage
+	- none : global agent won't be defined-> agent needs to be defined at each stages 
+	- label ' ' : use agent with provided label to execute the pipeline or stage
+	- node{ label ' '  } :  same with agent{label ' ' } but can use options
+```
+agent{
+	node{
+		label ''		// use agent with provided label
+		customWorkspace ''	// config workspace location
+	}
+}
+```
+
+- Example
+ex1.
+```
+pipeline{
+	agent {
+
+	}
+	stages{
+		stage{
+
+		}
+	}
+}
+
+```
+
+ex2.
+```
+pipeline{
+    agent none
+    stages{
+	stage{
+	    agent{
+
+	    }
+	    steps{
+
+	    }
+	}
+
+
+	stage{
+	    agent{
+
+	    }
+	    steps{
+
+	    }
+	}
+    }
+}
+```
         
-    1. 위치 :  파이프라인 구성요소 중 가장 먼저 옴(물론 실제 위치는 상관없지만 관습적으로 제일 위에 사용) -> ex1 참고
-                or
-                각 stage 의 시작 부분에 위치 -> 각 스테이지별로 사용할 agent가 정해짐 -> ex2 참고
-
-
-    2. 파라미터 -> (5) - (7)은 아직 모르기 때문에 정확한 이해를 못했음
-        (1) any
-            정의 : 모든 agent에서 파이프라인 실행
-        (2) none
-            이를 파이프라인 시작점에서 정의하면 글로벌 agent를 설정 안한다는 이야기
-            so, 각 stage에서 agent를 설정해줘야함
-        (3) label{  } 
-            정의 : 해당 라벨로 이름지워진 agent 에서 파이프라인 실행
-        (4) node{ label ''  } 
-            정의 : label{ '' } 과 동일한 기능 
-        (5) docker{  }
-        (6) dockerfile{  }
-            정의 : 도커파일을 통한 파이프라인 실행
-            특징 : Multibranch Pipeline 또는 Pipeline from SCM로 로드되어야함
-        (7)kubernetes{  }
-            정의 : 쿠버네틱스를 통한 파이프라인 실행
-            특징 : Multibranch Pipeline 또는 Pipeline from SCM로 로드되어야함
-
-
-    3. 옵션 -> 파라미터의 옵션
-        ex.
-            agent{
-                node{
-                    label ''
-                    customWorkspace ''
-                }
-            }
-        (1) label : 특정 이름을 가진 노드 설정시 사용
-
-        (2) customWorkspace : workspace를 default가 아닌 개인이 설정하기 위해서 사용
-        
-
-
-    4. 예시
-        ex1. pipeline{
-                    agent {
-                        
-                    }
-                    stages{
-                        stage{
-                        }
-                    }
-            }
-
-        ex2.
-        pipeline{
-            agent none
-            stages{
-                stage{
-                    agent{
-
-                    }
-                    steps{
-                        
-                    }
-                }
-
-
-                stage{
-                    agent{
-
-                    }
-                    steps{
-
-                    }
-                }
-            }
-        }
-
-
-#### Section 3 : stages
+#### Section 2 : stages
     1. 기능 : 수행할 작업들을 stage의 단위로 정의하는 블록
 
     2. 예시 
@@ -146,26 +132,10 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
             }
         }
 
-#### Section 4 : steps
-    1. 기능 : stage 가 수해할 작업을 정의하는 블록
-
-    2. 예시
-        pipeline{
-            agent {
-                
-            }
-            stages{
-                stage('test'){
-                    steps{
-                        echo 'hello'
-                    }
-                }
-            }
-        }
 
 
 
-#### Section 5 : post
+#### Section 3 : post
     1. 기능 : stages 다음에 실행되어야할 작업을 실행하는 블록
 
     2. 위치 : stages 다음
@@ -202,7 +172,7 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
 
 
 
-### 2) Directives
+### 3) Directives
 #### (a) Directives located between agent and stages
 ##### Directives 1 : environment
     1. 기능 : 전역변수 설정
@@ -651,6 +621,25 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
                     }
                 }
             }
+
+
+### 4) Steps
+    1. 기능 : stage 가 수해할 작업을 정의하는 블록
+
+    2. 예시
+        pipeline{
+            agent {
+                
+            }
+            stages{
+                stage('test'){
+                    steps{
+                        echo 'hello'
+                    }
+                }
+            }
+        }
+
 
 
 ## 4. etc
