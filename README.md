@@ -58,6 +58,7 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
 ### 2) Sections
 #### Section 1 : agent      
 - Location
+
 Agent section must be defined at the top-level inside the pipeline block -> refer to ex1
 		
 or it can be defined at stage-level(optional)  ->refer to ex2
