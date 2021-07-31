@@ -56,7 +56,8 @@ $ sudo  cat /etc/sysconfig/jenkins  | grep JENKINS_PORT
 - Feature : it consists of Sections, Directives, Steps, or assignment statements  
 
 ### 2) Sections
-#### Section 1 : agent      
+#### Section 1 : agent
+- Function : select agent which runs pipeline or stages 
 - Location
 
 Agent section must be defined at the top-level inside the pipeline block -> refer to ex1
@@ -123,56 +124,63 @@ pipeline{
 ```
         
 #### Section 2 : stages
-    1. 기능 : 수행할 작업들을 stage의 단위로 정의하는 블록
+- Function: Define pipeline's tasks
+- Feature : it consists of one or more stage directives
+- Example
+```
+pipeline{
+    agent {
 
-    2. 예시 
-        pipeline{
-            agent {
-                    
-            }
-            stages{
-                    stage('test'){
-                    }
-            }
-        }
-
+    }
+    stages{
+	    stage('test'){
+	    }
+    }
+}
+```
 
 
 
 #### Section 3 : post
-    1. 기능 : stages 다음에 실행되어야할 작업을 실행하는 블록
+- Function : define one or more additional steps after the completion of pipelien or stage
+- Location : after stages in pipeline block or after steps in stage block 
+- Conditions
+	- always{} : 파이프라인 또는 stages의 작업결과와 상관없이 post 의 작업 실행
+	- failure{} : Only run the steps in post if pipeline or stage's run status is 'failed'
+	- success{} : Only run the steps in post if pipeline or stage's run status is 'success'
+	- unstable{} : Only run the steps in post if pipeline or stage's run status is 'unstabe'(test or code issue)
+	- changed{} : Only run the steps in post if pipeline or stage's run status is different from previous run
+	- fixed{} : Only run the steps in post if pipeline or stage's run status is 'success' and previous run status is 'failed' or 'unstable'
+	- regression{} : Only run the steps in post if pipeline or stage's run status is 'failed', 'unstabe', or 'aborted' and previous run status is 'success' or 'unstable' 
+	- aborted{} : Only run the steps in post if pipeline or stage's run status is 'aborted' (stopped)
+	- unsuccessful{} : Only run the steps in post if pipeline or stage's run status is not 'success'
+	- cleanup{} : Run the steps in post after every other post condition has been evaluated, regardless of the Pipeline or stage’s status
 
-    2. 위치 : stages 다음
+- Example 
+```
+pipeline{
+	agent{
 
-    3. 조건
-        (1) always{} : 파이프라인 또는 stages의 작업결과와 상관없이 post 의 작업 실행
-        (2) failure{} : 파이프라인 또는 stages의 작업결과 실패 시 post 의 작업 실행
-        (3) success{} : 파이프라인 또는 stages의 작업결과 성공 시 post 의 작업 실행
-        (4) unstable{} : 파이프라인 또는 stages의 코드가 틀렸거나 테스트 실패시 발생
-        (5) changed{} : 파이프라인 또는 stages의 이전 실행과 다른 결과가 나왔을 떄만 작업 실행
-        (6) fixed{} : 파이프라인 또는 stages의 현재 실행 결과가 success이고 이전 실행은 failure, unstable 시 발생
-        (7) regression{} :  파이프라인 또는 stages의 현재 실행 결과가 failure, unstable, aborted 중 하나이고 이전 실행은 성공시 발생
-        (8) aborted{} : 파이프라인 또는 stages가 중단되는 경우
-        (9) unsuccessful{} : 파이프라인 또는 stages의 실행 상태가 성공 상태가 아닌 경우에만 실행
-        (10) cleanup{} : 파이프라인 또는 stages의 상태에 관계없이 다른 모든 포스트 조건이 평가된 후 이 포스트 조건의 단계를 실행
+	}
 
-        ex. 
-            pipeline{
-                agent{
+	stages{
+		stage{
+			steps{
+			
+			}
+			post{
+			
+			}
+		}
+	}
 
-                }
+	post{
+    		always{
 
-                stages{
-
-                }
-
-                post{
-                    always{
-
-                    }
-                }
-            }
-
+    		}
+	}
+}
+```
 
 
 
