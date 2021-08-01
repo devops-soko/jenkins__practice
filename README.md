@@ -619,33 +619,40 @@ matrix {
 
 ## 4. etc
 ### 1) How to call environments & parameters
-#### (a) Jenkins일때
-		environment ->  “${env.변수명}“
-    parameters ->  “${params.변수명}“
-
-#### (b) Script 일때
+#### (a) In Jenkins Syntax
+```
+environment 	->  	“${env.variable_name}“
+parameters 	->  	“${params.variable_name}“
+```
+#### (b) In Script 
 - groovy 
-	environment -> env.변수명
-parameters -> params.변수명
-
+```
+environment 	-> 	env.variable_name
+parameters 	-> 	params.variable_name
+```
 - sh 
-sh “ ” 시 -> 	sh “${env.변수명}” 
-sh “${params.변수명}”
-sh ‘ ’ 시 -> 	sh ‘${변수명}’
+```
+sh “ ” -> 	sh “${env.variable_name}” 
+		sh “${params.변수명}”
+sh ‘ ’ -> 	sh ‘${variable_name}’
+```
+- powershell 
+```
+powershell “ ” -> 	powershell “${env.variable_name}” 
+			powershell “${params.variable_name}”
+powershell ‘ ’ -> 	powershell ‘$env:variable_name’ (both env and params use env)
+```
 
-- powershell ->
-			powershell “ ” 시 -> 	powershell “${env.변수명}” 
-powershell “${params.변수명}”
-			powershell ‘ ’ 시 -> 	powershell ‘$env:변수명’ (env, params 모두 env로)
-
+#### (c) Example
+```
 withCridentials([usernamePassword(credentialsId: ‘test1’, userVariable: ‘user1’, passwordVariable: ‘pw1’’), usernamePassword(credentialsId: ‘test2’, userVariable: ‘user2’, passwordVariable: ‘pw2’)]){
-	sh ‘${user1}’     -> 이런식으로 호출해서 사용 가능
+	sh ‘${user1}’     
 }
+```
 
-
-### 2) How to change environments 
-environment 블록에서 만든 environment -> 일반 변수처럼 변경 불가
-ex.
+### 2) How to change environments?
+#### (a) environment variables made in environment block cannot be changed like normal variable
+```
 pipeline{
 	agent any
 	environment{
@@ -655,7 +662,7 @@ pipeline{
 		stage(‘test1’){
 			steps{
 				script{
-					env.test = ‘2’  #변경되지 않음
+					env.test = ‘2’  #env is not changed
 }
 }
 			
@@ -663,15 +670,15 @@ pipeline{
 stage(‘test2’){
 	steps{
 	withEnv([“test=3”]) {
-		#이 블럭 안에서만 해당 env값 변경
+		#Users can use changed env in only this block
 }
 }
 }
 	}
 }
-
-script 블록 안에서 만든 environment -> 일반 변수처럼 변경 가능
-ex.
+```
+#### (b) environment variables made in script block can be changed like normal variable
+```
 pipeline{
 	agent any
 	stages{
@@ -692,3 +699,4 @@ script{
 }
 	}
 }
+```
