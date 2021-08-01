@@ -424,220 +424,194 @@ pipeline {
 }
 ```
 
-##### Directives 8 :when
-    1. 기능 : stage가 실행할지 결정하는 조건문 
+##### Directives 8 :when 
+- Function : Determine whether the stage should be executed depending on the given condition
+- Options -> There are more options so if you want to know more about them please refer to https://www.jenkins.io/doc/book/pipeline/syntax/#when
+	- when {branch ''} : Execute the stage when the branch being built matches the branch pattern given (ex. git)
+	- when { environment name: 'DEPLOY_TO', value: 'production' } : Execute the stage when the specified environment variable is set to the given value
+	- when { equals expected: 2, actual: currentBuild.number } : Execute the stage when the expected value is equal to the actual value
+	- when { expression {  } }  : Execute the stage when the specified Groovy expression evaluates to true
+	- when { not { branch 'master' } } : Execute the stage when the nested condition is false
+	- when { allOf { branch 'master'; environment name: 'DEPLOY_TO', value: 'production' } } : Execute the stage when all of the nested conditions are true
+	- when { anyOf { branch 'master'; branch 'staging' } } : Execute the stage when at least one of the nested conditions is true
+	- triggeredBy : Execute the stage when the current build has been triggered by the param given
+		- when { triggeredBy 'SCMTrigger' }   -> triggered by pollscm
+		- when { triggeredBy 'TimerTrigger' } -> triggered by  cron
+		- when { triggeredBy 'UpstreamCause' } -> triggered by  upstream
+		- when { triggeredBy cause: "UserIdCause", detail: "vlinde" } -> triggered by user's requirement
 
-    2. 옵션 
-        (1) when {branch ''} : git의 브랜치에 따라 실행
-        (2) when { environment name: 'DEPLOY_TO', value: 'production' } : 특정 전역변수(environment)의 값에 따라 실행
-        (3) when { equals expected: 2, actual: currentBuild.number } : 기대값과 실제값 동일 여부에 따라 실행
-        (4) when { expression {  } } 안의 출력값이 true, false 에 따라 실행 여부 결정(if 와 값음) 
-        (5) when { not { branch 'master' } } : ~조건이 아닐 시 실행
-        (6) when { allOf { branch 'master'; environment name: 'DEPLOY_TO', value: 'production' } } : 안의 조건 중 모두 해당되면 실행(조건 구별 ;)
-        (7) when { anyOf { branch 'master'; branch 'staging' } } : 안의 조건 중 최소 하나만 해당되면 실행(조건 구별 ;)
-        (8) triggeredBy
-            -   when { triggeredBy 'SCMTrigger' }   -> pollscm 이 trigger로 실행된 경우
-            -    when { triggeredBy 'TimerTrigger' } -> 일정 시간주기가 trigger로 실행된 경우
-            -    when { triggeredBy 'UpstreamCause' } -> upstream 이 trigger로 실행된 경우
-            -    when { triggeredBy cause: "UserIdCause", detail: "vlinde" } -> 특정사용자의 요청이 trigger로 실행된 경우
-
-    3. 예시 
-        pipeline {
-            agent any
-            stages {
-                stage('Example Build') {
-                    steps {
-                        echo 'Hello World'
-                    }
-                }
-                stage('Example Deploy') {
-                    when {
-                        expression { BRANCH_NAME ==~ /(production|staging)/ }
-                        anyOf {
-                            environment name: 'DEPLOY_TO', value: 'production'
-                            environment name: 'DEPLOY_TO', value: 'staging'
-                        }
-                    }
-                    steps {
-                        echo 'Deploying'
-                    }
-                }
-            }
-        }
-
+- Example
+```
+pipeline {
+    agent any
+    stages {
+	stage('Example Build') {
+	    steps {
+		echo 'Hello World'
+	    }
+	}
+	stage('Example Deploy') {
+	    when {
+		expression { BRANCH_NAME ==~ /(production|staging)/ }
+		anyOf {
+		    environment name: 'DEPLOY_TO', value: 'production'
+		    environment name: 'DEPLOY_TO', value: 'staging'
+		}
+	    }
+	    steps {
+		echo 'Deploying'
+	    }
+	}
+    }
+}
+```
 
 
 
 
 #### (a) Directives located in steps
 ##### Directives 9 : script
-    1. 기능 : steps 내 작업 입력 시 스크립트(groovy) 사용을 위해 사용하는 지시어
+- Function : allow users to use groovy in steps
+- Example
+```
+pipeline {
+    agent any
+    stages {
+	stage('Example') {
+	    steps {
+		echo 'Hello World'
 
-    2. 예시
-        pipeline {
-            agent any
-            stages {
-                stage('Example') {
-                    steps {
-                        echo 'Hello World'
-
-                        script {
-                            def browsers = ['chrome', 'firefox']
-                            for (int i = 0; i < browsers.size(); ++i) {
-                                echo "Testing the ${browsers[i]} browser"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-    3. 예외
-        flow control(if, else / try,catch, finally)와 관련된 groovy 명령어는 steps와 script블럭이 필요없이 사용 가능
-        ex1.
-            node {
-                stage('Example') {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo 'I only execute on the master branch'
-                    } else {
-                        echo 'I execute elsewhere'
-                    }
-                }
-            }
-
-        ex2. 
-            node {
-                stage('Example') {
-                    try {
-                        sh 'exit 1'
-                    }
-                    catch (exc) {
-                        echo 'Something failed, I should sound the klaxons!'
-                        throw
-                    }
-                }
-            }
-
+		script {
+		    def browsers = ['chrome', 'firefox']
+		    for (int i = 0; i < browsers.size(); ++i) {
+			echo "Testing the ${browsers[i]} browser"
+		    }
+		}
+	    }
+	}
+    }
+}
+```
+- Exception : flow controls(if, else / try,catch, finally) do not need script block
+```
+node {
+	stage('Example') {
+	    if (env.BRANCH_NAME == 'master') {
+		echo 'I only execute on the master branch'
+	    } else {
+		echo 'I execute elsewhere'
+	    }
+	}
+}
+```
+``` 
+node {
+	stage('Example') {
+	    try {
+		sh 'exit 1'
+	    }
+	    catch (exc) {
+		echo 'Something failed, I should sound the klaxons!'
+		throw
+	    }
+	}
+}
+```
 
 ### 4) Parallel Processing 
+#### (a) parallel
+- Function : Run a specific task parallelly
+- Location : within stage 
+- Example
+```
+pipeline {
+    agent any
+    stages {
+	stage('Non-Parallel Stage') {
+	    steps {
+		echo 'This stage will be executed first.'
+	    }
+	}
 
-##### Directives 9: parallel
-    1. 기능 : 특정 작업을 병력적으로 실행하기 위한 지시어
-2. 위치 : stage 
-    2. 예시 :
-        pipeline {
-            agent any
-            stages {
-                stage('Non-Parallel Stage') {
-                    steps {
-                        echo 'This stage will be executed first.'
-                    }
-                }
+	stage('Parallel Stage') {
+	    parallel {
+		stage('Branch 1') {
+		    agent {
+			label "node-branch-1"
+		    }
+		    steps {
+			echo "Branch 1"
+		    }
+		}
+		stage('Branch 2') {
+		    agent {
+			label "node-branch-2"
+		    }
+		    steps {
+			echo "Branch 2"
+		    }
+		}
+		stage('Branch 3') {
+		    agent {
+			label "node-branch-3"
+		    }
+		    stages {
+			stage('Nested 1') {
+			    steps {
+				echo "Nested 1 in Branch 3"
+			    }
+			}
+			stage('Nested 2') {
+			    steps {
+				echo "Nested 2 in Branch 3"
+			    }
+			}
+		    }
+		}
+	    }
 
-                stage('Parallel Stage') {
-                    when {
-                        branch 'master'
-                    }
-                    failFast true
+	}
 
-                    parallel {
-                        stage('Branch A') {
-                            agent {
-                                label "for-branch-a"
-                            }
-                            steps {
-                                echo "On Branch A"
-                            }
-                        }
-                        stage('Branch B') {
-                            agent {
-                                label "for-branch-b"
-                            }
-                            steps {
-                                echo "On Branch B"
-                            }
-                        }
-                        stage('Branch C') {
-                            agent {
-                                label "for-branch-c"
-                            }
-                            stages {
-                                stage('Nested 1') {
-                                    steps {
-                                        echo "In stage Nested 1 within Branch C"
-                                    }
-                                }
-                                stage('Nested 2') {
-                                    steps {
-                                        echo "In stage Nested 2 within Branch C"
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-            }
-        }
+    }
+}
+```
 
 
 
+#### (b) matix
+- Function : Define a multi-dimensional matrix of name-value combinations to be run in parallel
 
-##### Directives 11 : matix
-    1. 기능 :   parallel와 같이 병렬 실행을 위한 지시어임
-                그러나 parallel의 단점 개선
-                parallel의 단점 : 병렬로 진행하고 싶은 작업을 반복적으로 기입해야하기 때문에 동시에 많은 작업을 수행하게 만들 때 코드가 길어짐
-                matrix의 개선점 : cell의 개념을 통해 적은 수의 코드 중복을 피함
-
-2. 위치 :#### (a) Directives located in an unusal place
-    2. 구조 
-        - matrix 안에는 axes와 stages가 무조건 있어야함
-        - axes 안에는 여러개의 axis로 구성
-        - axis는 name 과 values를 입력받음
-        - 각axis의 values 수의 곱한 만큼의 cell이 생김
-
-    3. 예시
-        ex1.buil->test->deploy의 작업을 axis의 3개의 cell이 각각 실행
-            matrix {
-                axes {
-                    axis {
-                        name 'PLATFORM'
-                        values 'linux', 'mac', 'windows'
-                    }
-                }
-                stages {
-                    stage('build') {
-                        // ...
-                    }
-                    stage('test') {
-                        // ...
-                    }
-                    stage('deploy') {
-                        // ...
-                    }
-                }
-                }
-
-        ex2. build-and-test 라는 작업을 12개의 cell이 실행
-            matrix {
-                axes {
-                    axis {
-                        name 'PLATFORM'
-                        values 'linux', 'mac', 'windows'
-                    }
-                    axis {
-                        name 'BROWSER'
-                        values 'chrome', 'edge', 'firefox', 'safari'
-                    }
-                }
-                stages {
-                    stage('build-and-test') {
-                        // ...
-                    }
-                }
-            }
-
+- Features        
+	- matrix must contain axes and stages
+	- axes includes one or more axis
+	- axis consists of a name and a list of values
+	- total cell = multiply the number of values in each axis 
+- Example -> the tasks(buil->test->deploy) will be done by 3 axis (total cells = 3*4 = 12)
+```
+matrix {
+	axes {
+	    axis {
+		name 'OS'
+		values 'linux', 'mac', 'windows'
+	    }
+	    axis {
+		name 'BROWSER'
+		values 'chrome', 'edge', 'firefox', 'safari'
+	    }
+	}
+	stages {
+	    stage('build') {
+		// ...
+	    }
+	    stage('test') {
+		// ...
+	    }
+	    stage('deploy') {
+		// ...
+	    }
+	}
+}
+```
 
 
 
