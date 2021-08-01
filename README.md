@@ -693,7 +693,7 @@ pipeline{
 stage(‘test2’){
 	steps{
 script{
-		env.test = ‘2’  #test는 2 로 변동
+		env.test = ‘2’  #test is changed from 1 to 2 
 	}
 }
 }
