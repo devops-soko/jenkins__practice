@@ -181,19 +181,16 @@ pipeline{
 	}
 
 	stages{
-		stage{
+		stage('test'){
 			steps{
-			
-			}
-			post{
-			
+				echo 'hello'
 			}
 		}
 	}
 
 	post{
     		always{
-
+			echo 'finish'
     		}
 	}
 }
@@ -209,22 +206,22 @@ pipeline{
 - Example (set Username and Password Credentials as enviornment variable)
 ```
 pipeline {
-agent any
-environment { 
-        TEST_URL = 'https://test.com'
-}
-stages {
-    stage('Example Username/Password') {
-	environment {
-	    TEST_CREDS = credentials('test-username-password')
+	agent any
+	environment { 
+		TEST_URL = 'https://test.com'
 	}
-	steps {
-	    sh 'echo "User is $TEST_CREDS_USR"'
-	    sh 'echo "Password is $TEST_CREDS_PSW"'
-	    sh 'curl -u $TEST_CREDS $TEST_URL'
+	stages {
+	    stage('Example Username/Password') {
+		environment {
+		    TEST_CREDS = credentials('test-username-password')
+		}
+		steps {
+		    sh 'echo "User is $TEST_CREDS_USR"'
+		    sh 'echo "Password is $TEST_CREDS_PSW"'
+		    sh 'curl -u $TEST_CREDS $TEST_URL'
+		}
+	    }
 	}
-    }
-}
 }
 ```
 cf. You can get Username and Password Credentials like below 
@@ -314,122 +311,118 @@ pipeline {
 
 
 ##### Directives 4 :triggers
-    1. 기능 : 파이프라인이 자동빌드 되도록 빌드 조건을 설정하는 지시어
+- Function : Set build conditions so that the pipeline is automatically build
+- Option -> There are more options, if you want to know about it then please refer to https://www.jenkins.io/doc/book/pipeline/syntax/#triggers
+	- cron('* * * * *') : define a regular interval at which the Pipeline should be re-triggered
+	- pollscm('* * * * *') : define a regular interval at which Jenkins should check for new source changes
+- cron syntax : the way to set cron('* * * * *') and pollscm('* * * * *')
 
-    2. 옵션
-        cron('* * * * *') : 특정 시간주기마다 빌드 일어나도록 하는 옵션
+| Min | Hour | Dom | Month | DOW |
+|:--------|:--------|:--------|:--------|:--------|
+| 0-59 | 0-23 | 1-31 | 1-12 | 0-7(0,7 are Sunday)
 
-        pollscm('* * * * *') : 특정 시간주기마다 소스 확인해 변경사항이 있으면 실행하는 옵션
+cf1. * : all valid values
 
-        upstream(upstreamProjects: 'job1,job2', threshold: hudson.model.Result.SUCCESS) : string이 설정한 임계값 넘으면 실행하는 옵션-> 써본적이 없어 이해 떨어짐 
+cf2. H : allow periodically scheduled tasks to produce even load on the system (it also can be used with a range)
 
-    3. cron syntax : cron('* * * * *'), pollscm('* * * * *') 에서 시간 주기 설정하는 방법
-        분      시간    일      달      요일
-        *       *       *       *       *
-        0-59    0-23    1-31    1-12    0-7(0,7은 일요일임)
+ex1. once a day on the 1st and 15th of every month except December : triggers{ cron('H H 1,15 1-11 *') 
 
-        cf1. * : 모든 유효값을 설정
-        cf2. H는 특정 시간을 지칭하는 것이 아닌 랜덤하게 한시간대를 설정(사용 이유 : 너무 한 시간대에 많은 파이프라인이 빌드되게 설정하면 과부하가 걸릴 수 있기 때문)
+ex2. once every two hours at 45 minutes past the hour starting at 9:45 AM and finishing at 3:45 PM every weekday. :  triggers{ cron('45 9-16/2 * * 1-5') }
 
-        ex1. once a day on the 1st and 15th of every month except December : triggers{ cron('H H 1,15 1-11 *') }
-        ex2. once every two hours at 45 minutes past the hour starting at 9:45 AM and finishing at 3:45 PM every weekday. :  triggers{ cron('45 9-16/2 * * 1-5') }
-
-
-    4. 예시 
-        // Declarative //
-        pipeline {
-            agent any
-            triggers {
-                cron('H */4 * * 1-5')
-            }
-            stages {
-                stage('Example') {
-                    steps {
-                        echo 'Hello World'
-                    }
-                }
-            }
-        }
+- Example 
+```
+pipeline {
+    agent any
+    triggers {
+	cron('H */4 * * 1-5')
+    }
+    stages {
+	stage('Example') {
+	    steps {
+		echo 'Hello World'
+	    }
+	}
+    }
+}
+```
 
 
+##### Directives 5 : tools
+- Function : auto-install and put on the PATH
+- Tools
+	- maven    ''
+	- jdk ''
+	- gradle  ''
 
-##### Directives 5 :tools -> 써본적이 없어 이해 떨어짐
-    1. 기능 : 자동설치 및 path설정을 위한 섹션
-
-    2. 옵션
-        maven    ''
-        jdk ''
-        gradle  ''
-
-    3. 특징
-
-    4. 예시
-        pipeline {
-            agent any
-            tools {
-                maven 'apache-maven-3.0.1' 
-            }
-            stages {
-                stage('Example') {
-                    steps {
-                        sh 'mvn --version'
-                    }
-                }
-            }
-        }
-        
+- Example
+```
+pipeline {
+    agent any
+    tools {
+	maven 'apache-maven-3.0.1' 
+    }
+    stages {
+	stage('Example') {
+	    steps {
+		sh 'mvn --version'
+	    }
+	}
+    }
+}
+```        
         
 #### (b) Directives located between stage and steps
 ##### Directives 6 :stage
-    1. 기능 : stages 섹션 안의 작업들을 나누는 지시어
-
-    2. 특징 :   stages 안에 적어도 하나의 stage는 있어야함
-                stage의 이름을 설정해줘야함
-
-    3. 예시
-        pipeline {
-            agent any
-            stages {
-                stage('Example') {
-                    steps {
-                        echo 'Hello World'
-                    }
-                }
-            }
-        }
-
+- Function : Define tasks within stages section step by step
+- Location : It is in stages section and includes steps section
+- Features
+	- Stages section must contain at least one stage
+	- stage needs to be named
+- Example
+```
+pipeline {
+    agent any
+    stages {
+	stage('Test') {
+	    steps {
+		echo 'this is test'
+	    }
+	}
+    }
+}
+```
 
 
 ##### Directives 7 :input
-    1. 기능 : 특정 stage에서 사용자에게 입력값 받기 위한 지시어
+- Function : pause the pipeline and allow a user to input
+- Options
+	- message : 입력 요구시 사용자에게 출력할 메시지 (require)
+	- id : dentifier for this input (default id is stage name)
+	- ok : ok button's text
+	- submitter : list of users or group names allowed to submit this input
+	- parameters : input's form (it is same with parameters directive, so please refer to it)
 
-    2. 옵션
-        (1) message : 입력 요구시 사용자에게 출력할 메시지 (무조건 있어야함)
-        (2) id : 이 입력에 대한 식별자 (디폴트는 스테이지이름)
-        (3) ok : 입력 양식이 ok버튼임
-        (4) submitter : 입력값 입력 가능한 사용자 지정
-        (5) parameters : 기존 paramteters 지시어와 동일하게 사용 가능
-
-    3. 예시
-        pipeline {
-            agent any
-            stages {
-                stage('Example') {
-                    input {
-                        message "Should we continue?"
-                        ok "Yes, we should."
-                        submitter "alice,bob"
-                        parameters {
-                            string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-                        }
-                    }
-                    steps {
-                        echo "Hello, ${PERSON}, nice to meet you."
-                    }
-                }
-            }
-        }
-
+- Example
+```
+pipeline {
+    agent any
+    stages {
+	stage('Test') {
+	    input {
+		message "Do you want to continue?"
+		ok "Yes, I do"
+		submitter "user1,user2"
+		parameters {
+		    string(name: 'TEST_TASK', defaultValue: 'Task1', description: 'please input task name')
+		}
+	    }
+	    steps {
+		echo "${TEST_TASK} was completed"
+	    }
+	}
+    }
+}
+```
 
 ##### Directives 8 :when
     1. 기능 : stage가 실행할지 결정하는 조건문 
