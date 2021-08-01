@@ -139,9 +139,26 @@ pipeline{
 }
 ```
 
+#### Section 2 : Steps
+- Function : Define a series of one or more steps to be executed in a given stage directive.
 
+- Example
+```
+pipeline{
+    agent {
 
-#### Section 3 : post
+    }
+    stages{
+	stage('test'){
+	    steps{
+		echo 'hello'
+	    }
+	}
+    }
+}
+```
+
+#### Section 4 : post
 - Function : define one or more additional steps after the completion of pipelien or stage
 - Location : after stages in pipeline block or after steps in stage block 
 - Conditions
@@ -187,122 +204,111 @@ pipeline{
 ### 3) Directives
 #### (a) Directives located between agent and stages
 ##### Directives 1 : environment
-    1. 기능 : 전역변수 설정
+- Function : Define environment variables(key-value pairs) for the pipeline
+- Location : inside the pipeline block between agent and stages or within stage directives
+- Example (set Username and Password Credentials as enviornment variable)
+```
+pipeline {
+agent any
+environment { 
+        TEST_URL = 'https://test.com'
+}
+stages {
+    stage('Example Username/Password') {
+	environment {
+	    TEST_CREDS = credentials('test-username-password')
+	}
+	steps {
+	    sh 'echo "User is $TEST_CREDS_USR"'
+	    sh 'echo "Password is $TEST_CREDS_PSW"'
+	    sh 'curl -u $TEST_CREDS $TEST_URL'
+	}
+    }
+}
+}
+```
+cf. You can get Username and Password Credentials like below 
 
-    2. 활용 : credentials()를 자주 사용
-        ex.Username and Password Credentials 활용
-            pipeline {
-                agent any
-                stages {
-                    stage('Example Username/Password') {
-                        environment {
-                            SERVICE_CREDS = credentials('my-predefined-username-password')
-                        }
-                        steps {
-                            sh 'echo "Service user is $SERVICE_CREDS_USR"'
-                            sh 'echo "Service password is $SERVICE_CREDS_PSW"'
-                            sh 'curl -u $SERVICE_CREDS https://myservice.example.com'
-                        }
-                    }
-                    stage('Example SSH Username with private key') {
-                        environment {
-                            SSH_CREDS = credentials('my-predefined-ssh-creds')
-                        }
-                        steps {
-                            sh 'echo "SSH private key is located at $SSH_CREDS"'
-                            sh 'echo "SSH user is $SSH_CREDS_USR"'
-                            sh 'echo "SSH passphrase is $SSH_CREDS_PSW"'
-                        }
-                    }
-                }
-            }
+variable_name = credentials(credential_id)
 
-        cf. Username and Password Credentials은  username:password로 설정되어있는 credentials임
-            각 값 호출 방법
-            SSH_CREDS = credentials('my-predefined-ssh-creds') 와 같이 credentials을 SSH_CREDS에 담으면,
-            아이디 호출 시 : SSH_CREDS_USR
-            비밀번호 호출시 : SSH_CREDS_PSW
+ex. TEST_CREDS = credentials('test-username-password')
 
+and can get username and password restectively like below
+
+username : $TEST_CREDS_USR
+
+password : $TEST_CREDS_PSW
 
 
 
+##### Directives 2 :options (there are more options. If you want to know more about it then please refer to https://www.jenkins.io/doc/book/pipeline/syntax/#options)
+- Function : configure Pipeline-specific options
+- Location : inside the pipeline block between agent and stages
+- Frequently used options
+	- retry :  options { retry(3) } 	-> 	retry the pipeline if it is failed
+	- timeout :  options { timeout(time: 1, unit: 'HOURS') }	->	Set a timeout period for the Pipeline run
 
-
-
-
-
-
-##### Directives 2 :options -> 엄청 많은 옵션이 있는데 아직 딱히 사용할 거 같지 않아서 생략
-    1. 기능 : 파이프라인 또는 stage의 특정 옵션 설정
-    
-    2. 자주 사용하는 옵션
-        (1) retry ->  options { retry(3) }
-        (2) timeout ->  options { timeout(time: 1, unit: 'HOURS') }
-
-    3. 예시
-        pipeline {
-            agent any
-            options {
-                timeout(time: 1, unit: 'HOURS') 
-            }
-            stages {
-                stage('Example') {
-                    steps {
-                        echo 'Hello World'
-                    }
-                }
-            }
-        }
-
+- Example
+```
+pipeline {
+    agent any
+    options {
+    	retry(5)
+	timeout(time: 3, unit: 'HOURS') 
+    }
+    stages {
+	stage('Test') {
+	    steps {
+		
+	    }
+	}
+    }
+}
+```
 
 
 
 ##### Directives 3 :parameters
-    1. 기능 : 파이프라인 빌드 시 사용자에게 입력받을 값
+- Funtion : Make the pipeline get values from user 
+- Option
+	- string : parameters { string(name: 'TEST_STR', defaultValue: 'this is test', description: '') }
+	- text :  parameters { text(name: 'TEST_TEXT', defaultValue: 'line1\nline2\nline3\n', description: '') }
+	- booleanParam :parameters { booleanParam(name: 'TEST_BOOL', defaultValue: true, description: '') }
+	- choice : parameters { choice(name: 'TEST_CHOICES', choices: ['choice1', 'choice2', 'choice3'], description: '') 
+	- password :  parameters { password(name: 'TEST_PASSWORD', defaultValue: 'PWD', description: '') }
 
-    2. 옵션
-        string : parameters { string(name: 'DEPLOY_ENV', defaultValue: 'staging', description: '') }
+- Example
+```
+pipeline {
+    agent any
+    parameters {
+	string(name: 'TEST_STR', defaultValue: '', description: 'input string')
 
-        text :  parameters { text(name: 'DEPLOY_TEXT', defaultValue: 'One\nTwo\nThree\n', description: '') }
+	text(name: 'TEST_TEXT', defaultValue: '', description: 'input text')
 
-        booleanParam :parameters { booleanParam(name: 'DEBUG_BUILD', defaultValue: true, description: '') }
+	booleanParam(name: 'TEST_BOOL', defaultValue: true, description: 'true or false')
 
-        choice : parameters { choice(name: 'CHOICES', choices: ['one', 'two', 'three'], description: '') }
+	choice(name: 'TEST_CHOICES', choices: ['val1', 'val2', 'val3'], description: 'Pick one')
 
-        password :  parameters { password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'A secret password') }
+	password(name: 'TEST_PASSWORD', defaultValue: 'PWD', description: 'Enter a password')
+    }
+    stages {
+	stage('Example') {
+	    steps {
+		echo "string value: ${params.TEST_STR}"
 
+		echo "text value : ${params.TEST_TEXT}"
 
-    3. 예시
-        pipeline {
-            agent any
-            parameters {
-                string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+		echo "boolean value : ${params.TEST_BOOL}"
 
-                text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
+		echo "choice value : ${params.TEST_CHOICES}"
 
-                booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
-
-                choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
-
-                password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
-            }
-            stages {
-                stage('Example') {
-                    steps {
-                        echo "Hello ${params.PERSON}"
-
-                        echo "Biography: ${params.BIOGRAPHY}"
-
-                        echo "Toggle: ${params.TOGGLE}"
-
-                        echo "Choice: ${params.CHOICE}"
-
-                        echo "Password: ${params.PASSWORD}"
-                    }
-                }
-            }
-        }
-
+		echo "password value : ${params.TEST_PASSWORD}"
+	    }
+	}
+    }
+}
+```
 
 
 
@@ -467,9 +473,64 @@ pipeline{
         }
 
 
+
+
+
+#### (a) Directives located in steps
+##### Directives 9 : script
+    1. 기능 : steps 내 작업 입력 시 스크립트(groovy) 사용을 위해 사용하는 지시어
+
+    2. 예시
+        pipeline {
+            agent any
+            stages {
+                stage('Example') {
+                    steps {
+                        echo 'Hello World'
+
+                        script {
+                            def browsers = ['chrome', 'firefox']
+                            for (int i = 0; i < browsers.size(); ++i) {
+                                echo "Testing the ${browsers[i]} browser"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    3. 예외
+        flow control(if, else / try,catch, finally)와 관련된 groovy 명령어는 steps와 script블럭이 필요없이 사용 가능
+        ex1.
+            node {
+                stage('Example') {
+                    if (env.BRANCH_NAME == 'master') {
+                        echo 'I only execute on the master branch'
+                    } else {
+                        echo 'I execute elsewhere'
+                    }
+                }
+            }
+
+        ex2. 
+            node {
+                stage('Example') {
+                    try {
+                        sh 'exit 1'
+                    }
+                    catch (exc) {
+                        echo 'Something failed, I should sound the klaxons!'
+                        throw
+                    }
+                }
+            }
+
+
+### 4) Parallel Processing 
+
 ##### Directives 9: parallel
     1. 기능 : 특정 작업을 병력적으로 실행하기 위한 지시어
-
+2. 위치 : stage 
     2. 예시 :
         pipeline {
             agent any
@@ -529,64 +590,14 @@ pipeline{
 
 
 
-#### (a) Directives located in steps
-##### Directives 10 : script
-    1. 기능 : steps 내 작업 입력 시 스크립트(groovy) 사용을 위해 사용하는 지시어
 
-    2. 예시
-        pipeline {
-            agent any
-            stages {
-                stage('Example') {
-                    steps {
-                        echo 'Hello World'
-
-                        script {
-                            def browsers = ['chrome', 'firefox']
-                            for (int i = 0; i < browsers.size(); ++i) {
-                                echo "Testing the ${browsers[i]} browser"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-    3. 예외
-        flow control(if, else / try,catch, finally)와 관련된 groovy 명령어는 steps와 script블럭이 필요없이 사용 가능
-        ex1.
-            node {
-                stage('Example') {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo 'I only execute on the master branch'
-                    } else {
-                        echo 'I execute elsewhere'
-                    }
-                }
-            }
-
-        ex2. 
-            node {
-                stage('Example') {
-                    try {
-                        sh 'exit 1'
-                    }
-                    catch (exc) {
-                        echo 'Something failed, I should sound the klaxons!'
-                        throw
-                    }
-                }
-            }
-
-
-
-#### (a) Directives located in an unusal place
 ##### Directives 11 : matix
     1. 기능 :   parallel와 같이 병렬 실행을 위한 지시어임
                 그러나 parallel의 단점 개선
                 parallel의 단점 : 병렬로 진행하고 싶은 작업을 반복적으로 기입해야하기 때문에 동시에 많은 작업을 수행하게 만들 때 코드가 길어짐
                 matrix의 개선점 : cell의 개념을 통해 적은 수의 코드 중복을 피함
 
+2. 위치 :#### (a) Directives located in an unusal place
     2. 구조 
         - matrix 안에는 axes와 stages가 무조건 있어야함
         - axes 안에는 여러개의 axis로 구성
@@ -635,22 +646,7 @@ pipeline{
             }
 
 
-### 4) Steps
-    1. 기능 : stage 가 수해할 작업을 정의하는 블록
 
-    2. 예시
-        pipeline{
-            agent {
-                
-            }
-            stages{
-                stage('test'){
-                    steps{
-                        echo 'hello'
-                    }
-                }
-            }
-        }
 
 
 
